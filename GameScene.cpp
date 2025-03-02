@@ -12,7 +12,7 @@ bool GameScene::init()
     if (!cocos2d::Scene::init()) return false;
 
     beatDetector = new BeatDetector();
-    if (!beatDetector->init("C:/projectscpp/FMODTest/Resources/audio/TMM43 - Ultimate Destruction.mp3", true)) {  
+    if (!beatDetector->init("path/to/your/audio/file", true)) {  
         CCLOG("Error: sound no load!");
         delete beatDetector;
         beatDetector = nullptr;
