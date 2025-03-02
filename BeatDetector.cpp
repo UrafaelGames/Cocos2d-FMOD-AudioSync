@@ -1,4 +1,5 @@
 ﻿#include "BeatDetector.h"
+#include "cocos2d.h"
 #include <iostream>
 
 BeatDetector::BeatDetector() : fmodSystem(nullptr), sound(nullptr), channel(nullptr), lastBeatIntensity(0.f), fftDSP(nullptr)
@@ -24,7 +25,16 @@ bool BeatDetector::init(const std::string& audioFile, bool loop)
 {
     if (!fmodSystem) return false;
 
-    if (fmodSystem->createSound(audioFile.c_str(), loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT, nullptr, &sound) != FMOD_OK)
+    std::string fullPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(audioFile);
+    
+    if (fullPath.empty()) {
+        CCLOG("Error: Audio file not found: %s", audioFile.c_str());
+        return false;
+    }
+
+    std::replace(fullPath.begin(), fullPath.end(), '\\', '/');
+
+    if (fmodSystem->createSound(fullPath.c_str(), loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT, nullptr, &sound) != FMOD_OK)
         return false;
 
     if (fmodSystem->playSound(sound, nullptr, false, &channel) != FMOD_OK)
@@ -35,8 +45,6 @@ bool BeatDetector::init(const std::string& audioFile, bool loop)
 
     return true;
 }
-
-
 
 void BeatDetector::update()
 {
