@@ -9,9 +9,7 @@ cocos2d::Scene* GameScene::createScene()
 
 bool GameScene::init()
 {
-    if (!cocos2d::Scene::init()) {
-        return false;
-    }
+    if (!cocos2d::Scene::init()) return false;
 
     beatDetector = new BeatDetector();
     if (!beatDetector->init("C:/projectscpp/FMODTest/Resources/audio/TMM43 - Ultimate Destruction.mp3", true)) {  
