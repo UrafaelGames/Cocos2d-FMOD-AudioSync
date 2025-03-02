@@ -12,7 +12,6 @@ Cocos2d-FMOD-AudioSync is a project that synchronizes graphics with audio in rea
 
 * **Cocos2d-x 4.0**
 * **FMOD** Studio **API**
-* **C++ 17**
 * Compatible with Windows and other platforms supported by Cocos2d-x.
 
 ### Installation
