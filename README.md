@@ -33,7 +33,7 @@ Cocos2d-FMOD-AudioSync is a project that synchronizes graphics with audio in rea
 
 ```cpp
 (!beatDetector->init("path/to/your/audio", true)) // false for not loop, true for enabled loop.
- beatDetector->setVolume(1.f); volume control.
+ beatDetector->setVolume(1.f); // volume control.
 ```
 ### Demo Video
 
