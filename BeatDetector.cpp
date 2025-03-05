@@ -1,6 +1,7 @@
-﻿#include "BeatDetector.h"
+#include "BeatDetector.h"
 #include "cocos2d.h"
 #include <iostream>
+#include "UrafaelxAudioManager.h"
 
 BeatDetector::BeatDetector() : fmodSystem(nullptr), sound(nullptr), channel(nullptr), lastBeatIntensity(0.f), fftDSP(nullptr)
 {
@@ -21,41 +22,74 @@ BeatDetector::~BeatDetector()
     }
 }
 
-bool BeatDetector::init(const std::string& audioFile, bool loop)
+bool BeatDetector::init( const std::string& audioFile, bool loop )
 {
-    if (!fmodSystem) return false;
-
-    std::string fullPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(audioFile);
-    
-    if (fullPath.empty()) {
-        CCLOG("Error: Audio file not found: %s", audioFile.c_str());
+    if (!fmodSystem) {
+        CCLOG( "Error: FMOD system not initialized." );
         return false;
     }
 
-    std::replace(fullPath.begin(), fullPath.end(), '\\', '/');
-
-    if (fmodSystem->createSound(fullPath.c_str(), loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT, nullptr, &sound) != FMOD_OK)
+    channel = UrafaelxAudioManager::getInstance()->playBgForBeatDetector( audioFile, loop );
+    if (!channel) {
+        CCLOG( "Error: Failed to get a valid FMOD channel for BeatDetector!" );
         return false;
+    }
 
-    if (fmodSystem->playSound(sound, nullptr, false, &channel) != FMOD_OK)
+    setLoop( loop );
+
+    if (fftDSP) {
+        FMOD_RESULT result = channel->addDSP( 0, fftDSP );
+        if (result != FMOD_OK) {
+            CCLOG( "FMOD Error (addDSP): %d", result );
+            return false;
+        }
+        fftDSP->setActive( true );
+    }
+    else {
+        CCLOG( "Error: fftDSP is nullptr!" );
         return false;
-
-    setLoop(loop); 
-    channel->addDSP(0, fftDSP);
+    }
 
     return true;
 }
 
+
+
 void BeatDetector::update()
 {
-    if (!fmodSystem || !channel || !fftDSP) return;
+    if (!fmodSystem) {
+        CCLOG( "Error: fmodSystem is nullptr in BeatDetector::update" );
+        return;
+    }
+
+    if (!channel) {
+        CCLOG( "Error: channel is nullptr in BeatDetector::update" );
+        return;
+    }
+
+    if (!fftDSP) {
+        CCLOG( "Error: fftDSP is nullptr in BeatDetector::update" );
+        return;
+    }
 
     fmodSystem->update();
 
     FMOD_DSP_PARAMETER_FFT* fftData = nullptr;
     unsigned int length = 0;
 
-    if (fftDSP->getParameterData(FMOD_DSP_FFT_SPECTRUMDATA, (void**)&fftData, &length, nullptr, 0) != FMOD_OK || !fftData || fftData->numchannels <= 0) {
+    FMOD_RESULT result = fftDSP->getParameterData( FMOD_DSP_FFT_SPECTRUMDATA, (void**)&fftData, &length, nullptr, 0 );
+    if (result != FMOD_OK) {
+        CCLOG( "Error: getParameterData failed in BeatDetector::update, FMOD result: %d", result );
+        return;
+    }
+
+    if (!fftData) {
+        CCLOG( "Error: FFT data is nullptr in BeatDetector::update" );
+        return;
+    }
+
+    if (fftData->numchannels <= 0) {
+        CCLOG( "Error: No channels in FFT data in BeatDetector::update" );
         return;
     }
 
@@ -63,6 +97,7 @@ void BeatDetector::update()
         spectrum[i] = fftData->spectrum[0][i];
     }
 }
+
 
 float BeatDetector::getBeatIntensity()
 {
@@ -93,5 +128,23 @@ void BeatDetector::setLoop(bool loop)
 
     if (channel) {
         channel->setMode(loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    }
+}
+
+void BeatDetector::release()
+{
+    if (sound) {
+        sound->release();
+        sound = nullptr;
+    }
+
+    if (fftDSP) {
+        fftDSP->release();
+        fftDSP = nullptr;
+    }
+
+    if (channel) {
+        channel->stop(); 
+        channel = nullptr;
     }
 }
