@@ -15,6 +15,7 @@ public:
 
     void setVolume(float volume);
     void setLoop(bool loop);
+    void release();
 
 private:
     FMOD::System* fmodSystem;
